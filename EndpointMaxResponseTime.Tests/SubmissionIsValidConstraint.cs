@@ -46,6 +46,14 @@ public class SubmissionIsValidConstraint : Constraint
         var isPhase2CompletedMatchesExpectation =
             _expectedIsPhase2Completed == null || isPhase2Completed == _expectedIsPhase2Completed;
         var isValid = isIdValid && isPhase1Completed && isPhase2CompletedMatchesExpectation;
-        return new ConstraintResult(this, actual, isValid);
+        return new SubmissionIsValidConstraintResult(
+            this,
+            actual,
+            isValid,
+            isIdValid,
+            isPhase1Completed,
+            isPhase2Completed,
+            _expectedIsPhase2Completed
+        );
     }
 }
