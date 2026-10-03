@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 using EndpointMaxResponseTime.Models;
@@ -37,10 +38,7 @@ public class SubmissionsTests
 
         var submissionFromCreate = await scenario.CreateSubmissionAsync();
         Assert.That(scenario.LastResponseTimeMilliseconds, Is.LessThan(500));
-        Assert.That(submissionFromCreate, Is.Not.Null);
-        Assert.That(submissionFromCreate.Id, Is.Not.EqualTo(Guid.Empty));
-        Assert.That(submissionFromCreate.Phase1CompletedAt, Is.Not.Null);
-        Assert.That(submissionFromCreate.Phase2CompletedAt, Is.Not.Null);
+        AssertThatSubmissionIsValid(submissionFromCreate, true);
 
         var submissionFromGet = await scenario.GetSubmissionAsync();
         Assert.That(submissionFromGet, Is.EqualTo(submissionFromCreate).UsingPropertiesComparer());
@@ -57,18 +55,13 @@ public class SubmissionsTests
 
         var submissionFromCreate = await scenario.CreateSubmissionAsync();
         Assert.That(scenario.LastResponseTimeMilliseconds, Is.InRange(1000, 1100));
-        Assert.That(submissionFromCreate, Is.Not.Null);
-        Assert.That(submissionFromCreate.Id, Is.Not.EqualTo(Guid.Empty));
-        Assert.That(submissionFromCreate.Phase1CompletedAt, Is.Not.Null);
-        Assert.That(submissionFromCreate.Phase2CompletedAt, Is.Null);
+        AssertThatSubmissionIsValid(submissionFromCreate, false);
 
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         var submissionFromGet = await scenario.GetSubmissionAsync();
-        Assert.That(submissionFromGet, Is.Not.Null);
+        AssertThatSubmissionIsValid(submissionFromGet, true);
         Assert.That(submissionFromGet.Id, Is.EqualTo(submissionFromCreate.Id));
-        Assert.That(submissionFromGet.Phase1CompletedAt, Is.Not.Null);
-        Assert.That(submissionFromGet.Phase2CompletedAt, Is.Not.Null);
     }
 
     [Test]
@@ -93,5 +86,19 @@ public class SubmissionsTests
 
         Assert.That(allSubmissionsAfter, Is.Not.Null);
         Assert.That(allSubmissionsAfter.Count, Is.EqualTo(allSubmissionsBefore.Count));
+    }
+
+    private static void AssertThatSubmissionIsValid(
+        [NotNull] Submission? actual,
+        bool isPhase2Completed
+    )
+    {
+        Assert.That(actual, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(actual.Id, Is.Not.EqualTo(Guid.Empty));
+            Assert.That(actual.Phase1CompletedAt, Is.Not.Null);
+            Assert.That(actual.Phase2CompletedAt, isPhase2Completed ? Is.Not.Null : Is.Null);
+        }
     }
 }
